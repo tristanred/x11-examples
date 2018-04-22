@@ -1,0 +1,10 @@
+This project accompanies my blog post over at http://lerouxtechnologies.com/x-adventures/
+
+In this project, I try to load an image from the computer and draw in inside a window. It's not a comprehensive tutorial
+of X11 but I'm hoping it can be used by people looking to try the library.
+
+Setup required :
+
+- Linux system with X11 installed
+- Cmake for managing the project.
+- C++ compiler
