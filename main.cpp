@@ -18,13 +18,18 @@
 #include <X11/Xproto.h>
 #include <X11/Xprotostr.h>
 
+#include "ImageLoader.h"
+
 Display* dis;
 int screen;
 Window win;
 GC gc;
 
+ImageLoader* loader;
+Pixmap image;
+
 void print_current_displayenv();
-void init_system(Display* dis, int* screen, Window* win, GC* gc);
+void init_system(Display* myDisplay, int* screen, Window* win, GC* gc);
 int handle_x_events();
 void draw_x_window();
 
@@ -35,14 +40,17 @@ int main()
 {
     print_current_displayenv();
 
-    int res = setenv("DISPLAY", ":0.0", 1);
-    if(res != 0)
-    {
-        printf("%d", errno);
-        exit(1);
-    }
+//    int res = setenv("DISPLAY", ":0.0", 1);
+//    if(res != 0)
+//    {
+//        printf("%d", errno);
+//        exit(1);
+//    }
 
     init_system(dis, &screen, &win, &gc);
+
+    loader = new ImageLoader(dis, screen, win, gc);
+    image = loader->LoadImage("test.xbm");
 
     print_display_pixformats(dis);
     print_screen_info(dis, screen);
@@ -58,6 +66,9 @@ int main()
         }
     }
 
+    delete(loader);
+
+    XFreePixmap(dis, image);
     XFreeGC(dis, gc);
     XDestroyWindow(dis, win);
     XCloseDisplay(dis);
@@ -73,7 +84,7 @@ void init_system(Display* myDisplay, int* screen, Window* win, GC* gc)
     myDisplay = XOpenDisplay((char*)0);
     if(myDisplay == NULL)
     {
-        printf("Call to XOpenDisplay failed with code %d", errno);
+        printf("Call to XOpenDisplay failed with code %d\n", errno);
         exit(1);
     }
 
@@ -96,12 +107,8 @@ void init_system(Display* myDisplay, int* screen, Window* win, GC* gc)
     XSetBackground(dis, gcref, white);
     XSetForeground(dis, gcref, black);
 
-    XMapWindow(dis, windowref);
-
     XClearWindow(dis, windowref);
     XMapRaised(dis, windowref);
-
-    XFlush(dis);
 }
 
 int handle_x_events()
@@ -137,11 +144,13 @@ int handle_x_events()
 
 void draw_x_window()
 {
-    char str[128];
-    strcpy(str, "Hello X11");
-    XDrawString(dis, win, gc, 0, 0, str, (int)strlen(str));
+    //char str[128];
+    //strcpy(str, "Hello X11");
+    //XDrawString(dis, win, gc, 0, 0, str, (int)strlen(str));
 
     XFillRectangle(dis, win, gc, 20, 20, 50, 50);
+
+    XCopyPlane(dis, image, win, gc, 0, 0, 128, 128, 50, 50, 1);
 
     XFlush(dis);
 }
@@ -214,7 +223,6 @@ void print_screen_info(Display* display, int screen)
 
     int dw = XDisplayWidth(display, screen);
     printf("Display Width = %i\n", dw);
-
 }
 
 void print_current_displayenv()
